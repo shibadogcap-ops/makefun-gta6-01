@@ -146,10 +146,10 @@ function shotChase(stage, rng) {
     laneCar(stage, 'sedan', 2760, 1376, 'h', 1400, -1, rng.pick(PALETTE.CAR_COLORS)),
   ]) keep.add(c);
 
-  // pursuit wedge: ~135px behind the hero, one car north, one south,
-  // headings within ~0.1 rad of the hero's so it reads as a chase
-  copCar(stage, 1868, 1372, 2068, 1392);
-  copCar(stage, 1862, 1482, 2062, 1462);
+  // pursuit wedge: directly in the hero's lane ~110-125px behind, both
+  // heading due east (angle 0) exactly like the hero so it reads as a chase
+  copCar(stage, hx - 108, hy - 6, hx - 108 + 140, hy - 6);
+  copCar(stage, hx - 122, hy + 34, hx - 122 + 140, hy + 34);
 
   police.heat = 250;
   police.wanted = 3;
@@ -272,7 +272,7 @@ function shotMission(stage, rng) {
   // gold objective beam ahead-right, beach and ocean at the right edge.
   const cx = 3900;
   const cy = 2138; // 2100 + 38
-  const hero = heroCar(stage, 'sedan', cx, cy, 0, '#2a9d8f', 320, {
+  const hero = heroCar(stage, 'sedan', cx, cy, 0, '#ff6f61', 320, {
     roadAxis: 'h', roadCoord: 2200, roadDir: 1, roadProgress: cx,
   });
   syncPlayerCar(player, hero);
@@ -284,7 +284,13 @@ function shotMission(stage, rng) {
     laneCar(stage, 'taxi', 4050, 2176, 'h', 2200, -1, '#e9c46a'),
   ]) keep.add(c);
 
-  copCar(stage, 3700, 2100, cx, cy);
+  // Cop on the coast road 470px west of the hero, same eastbound lane,
+  // heading due east; nudge along the road until clear of buildings.
+  let copX = cx - 470;
+  for (let i = 0; i < 60 && !free(city, copX, cy, 14); i++) {
+    copX += (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 8;
+  }
+  copCar(stage, copX, cy, copX + 140, cy);
   police.heat = 40;
   police.wanted = 1;
   police.busted = 0;
