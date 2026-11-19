@@ -193,8 +193,8 @@ export function drawPlayer(ctx, player, t) {
   if (player.mode !== 'foot' || player.dead) return;
 
   const moving = player.speedNow > 4;
-  const bob = moving ? Math.sin(player.walkPhase * 2) * 1.6 : Math.sin(t * 2 + player.x * 0.01) * 0.5;
-  const legSwing = moving ? Math.sin(player.walkPhase) * 3.2 : 0;
+  const bob = moving ? Math.sin(player.walkPhase * 2) * 2.2 : Math.sin(t * 2 + player.x * 0.01) * 0.7;
+  const legSwing = moving ? Math.sin(player.walkPhase) * 5 : 0;
 
   ctx.save();
   ctx.translate(player.x, player.y + bob * 0.4);
@@ -202,23 +202,29 @@ export function drawPlayer(ctx, player, t) {
   // soft shadow
   ctx.fillStyle = 'rgba(24,18,32,0.30)';
   ctx.beginPath();
-  ctx.ellipse(0, 3, 11, 8, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 3, 15, 6, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.rotate(player.angle);
 
   // legs (two small dark rects, offset by walk phase)
   ctx.fillStyle = '#2c2f3a';
-  roundRect(ctx, -7, -8 - legSwing * 0.4, 7, 5, 2); // left leg
-  roundRect(ctx, -7, 3 + legSwing * 0.4, 7, 5, 2);  // right leg
+  roundRect(ctx, -9, -7 - legSwing * 0.4, 9, 4, 1.5); // left leg
+  roundRect(ctx, -9, 3 + legSwing * 0.4, 9, 4, 1.5);  // right leg
   ctx.fill();
 
-  // body: teal shirt
-  ctx.fillStyle = '#2a9d8f';
+  // white outline ring marking the player
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(0, 0, 9, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, 15, 12.5, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // body: coral shirt, ~17 wide x 21 long oriented to facing
+  ctx.fillStyle = '#e76f51';
+  roundRect(ctx, -10.5, -8.5, 21, 17, 6);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(20,40,38,0.55)';
+  ctx.strokeStyle = 'rgba(90,30,20,0.55)';
   ctx.lineWidth = 1.2;
   ctx.stroke();
 
@@ -228,38 +234,38 @@ export function drawPlayer(ctx, player, t) {
     const ax = Math.cos(aim);
     const ay = Math.sin(aim);
     ctx.strokeStyle = '#e76f51';
-    ctx.lineWidth = 3.5;
+    ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(ax * 4, ay * 4);
-    ctx.lineTo(ax * 13, ay * 13);
+    ctx.moveTo(ax * 8, ay * 8);
+    ctx.lineTo(ax * 23, ay * 23);
     ctx.stroke();
     ctx.fillStyle = '#33334a';
     ctx.beginPath();
-    ctx.arc(ax * 15, ay * 15, 2.4, 0, Math.PI * 2);
+    ctx.arc(ax * 25, ay * 25, 3, 0, Math.PI * 2);
     ctx.fill();
   }
 
   // head (skin tone)
   ctx.fillStyle = '#f2c89b';
   ctx.beginPath();
-  ctx.arc(6, 0, 6, 0, Math.PI * 2);
+  ctx.arc(12, 0, 6.5, 0, Math.PI * 2);
   ctx.fill();
 
   // coral cap facing forward
   ctx.fillStyle = '#ff6b6b';
   ctx.beginPath();
-  ctx.arc(6, 0, 5.4, -Math.PI * 0.55, Math.PI * 0.55);
+  ctx.arc(12, 0, 5.8, -Math.PI * 0.55, Math.PI * 0.55);
   ctx.fill();
   // brim
-  ctx.fillRect(9.5, -1.4, 4.5, 2.8);
+  ctx.fillRect(16.5, -1.6, 5, 3.2);
 
   // subtle direction tick ahead of the body
   ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-  ctx.lineWidth = 1.4;
+  ctx.lineWidth = 1.6;
   ctx.beginPath();
-  ctx.moveTo(13, 0);
-  ctx.lineTo(17, 0);
+  ctx.moveTo(20, 0);
+  ctx.lineTo(24, 0);
   ctx.stroke();
 
   ctx.restore();

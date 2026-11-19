@@ -13,6 +13,17 @@ const DOWN_TIME = 6;
 const SHIRTS = ['#e63946', '#f4a261', '#2a9d8f', '#457b9d', '#9b5de5', '#f9c74f', '#f8961e', '#90be6d', '#f72585', '#00bbf9'];
 const SKINS = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac'];
 
+function roundRect(ctx, x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
 export function createPeds(city, rng, count = 24) {
   const list = [];
 
@@ -223,35 +234,54 @@ export function createPeds(city, rng, count = 24) {
 
   function draw(ctx, t) {
     for (const ped of list) {
-      const bob = ped.state === 'down' ? 0 : Math.sin(t * 9 + ped.phase) * 1.1;
       const down = ped.state === 'down';
+      const phase = t * 9 + ped.phase;
+      const bob = down ? 0 : Math.sin(phase) * 1.6;
+      const swing = down ? 0 : Math.sin(phase) * 5;
 
       // shadow
       ctx.fillStyle = 'rgba(30,10,40,0.28)';
       ctx.beginPath();
-      ctx.ellipse(ped.x + 2, ped.y + 4, down ? 11 : 7, down ? 5 : 7, 0, 0, Math.PI * 2);
+      ctx.ellipse(ped.x + 2, ped.y + 4, 15, 6, down ? ped.angle : 0, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.save();
       ctx.translate(ped.x, ped.y + bob);
+      ctx.rotate(ped.angle);
+
       if (down) {
-        ctx.rotate(ped.angle);
+        // knockdown pose: flattened body + head, same footprint as the player
         ctx.fillStyle = shadeOf(ped.color, 0.55);
         ctx.beginPath();
-        ctx.ellipse(0, 0, 11, 5, 0, 0, Math.PI * 2);
+        ctx.ellipse(1, 0, 16, 6.5, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = ped.skin;
         ctx.beginPath();
-        ctx.arc(9, 0, 3.4, 0, Math.PI * 2);
+        ctx.arc(14, 0, 6.5, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        ctx.fillStyle = ped.color;
-        ctx.beginPath();
-        ctx.arc(0, 0, 6.5, 0, Math.PI * 2);
+        // legs (two dark rects stepping with the walk cycle)
+        ctx.fillStyle = '#2c2f3a';
+        roundRect(ctx, -9, -7 - swing * 0.4, 9, 4, 1.5);
+        roundRect(ctx, -9, 3 + swing * 0.4, 9, 4, 1.5);
         ctx.fill();
+
+        // body: rounded torso ~17 wide x 21 long in the ped's shirt colour
+        ctx.fillStyle = ped.color;
+        roundRect(ctx, -10.5, -8.5, 21, 17, 6);
+        ctx.fill();
+        ctx.strokeStyle = shadeOf(ped.color, 0.6);
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // head (skin tone) with a per-ped hair arc
         ctx.fillStyle = ped.skin;
         ctx.beginPath();
-        ctx.arc(Math.cos(ped.angle) * 2, Math.sin(ped.angle) * 2, 3.4, 0, Math.PI * 2);
+        ctx.arc(12, 0, 6.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = shadeOf(ped.color, 0.45);
+        ctx.beginPath();
+        ctx.arc(12, 0, 5.8, -Math.PI * 0.55, Math.PI * 0.55);
         ctx.fill();
       }
       ctx.restore();
