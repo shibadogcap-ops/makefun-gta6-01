@@ -146,8 +146,10 @@ function shotChase(stage, rng) {
     laneCar(stage, 'sedan', 2760, 1376, 'h', 1400, -1, rng.pick(PALETTE.CAR_COLORS)),
   ]) keep.add(c);
 
-  copCar(stage, 1860, 1390, hx, hy);
-  copCar(stage, 1880, 1440, hx, hy);
+  // pursuit wedge: ~135px behind the hero, one car north, one south,
+  // headings within ~0.1 rad of the hero's so it reads as a chase
+  copCar(stage, 1868, 1372, 2068, 1392);
+  copCar(stage, 1862, 1482, 2062, 1462);
 
   police.heat = 250;
   police.wanted = 3;
@@ -266,29 +268,30 @@ function shotMission(stage, rng) {
     missions.update(0.1, stub);
   }
 
-  // Teal sedan, southbound in the x=4200 coastal-road lane, heading for the marina.
-  const cx = 4176;
-  const cy = 1900;
-  const hero = heroCar(stage, 'sedan', cx, cy, Math.PI / 2, '#2a9d8f', 320, {
-    roadAxis: 'v', roadCoord: 4200, roadDir: 1, roadProgress: cy,
+  // Teal sedan eastbound on the horizontal coast road, marina pad and its
+  // gold objective beam ahead-right, beach and ocean at the right edge.
+  const cx = 3900;
+  const cy = 2138; // 2100 + 38
+  const hero = heroCar(stage, 'sedan', cx, cy, 0, '#2a9d8f', 320, {
+    roadAxis: 'h', roadCoord: 2200, roadDir: 1, roadProgress: cx,
   });
   syncPlayerCar(player, hero);
 
   const keep = new Set([hero]);
   for (const c of [
-    laneCar(stage, 'sedan', 4176, 2250, 'v', 4200, 1, rng.pick(PALETTE.CAR_COLORS)),
-    laneCar(stage, 'hatch', 4176, 2550, 'v', 4200, 1, rng.pick(PALETTE.CAR_COLORS)),
-    laneCar(stage, 'taxi', 4224, 2400, 'v', 4200, -1, '#e9c46a'),
+    laneCar(stage, 'sedan', 4150, 2224, 'h', 2200, 1, rng.pick(PALETTE.CAR_COLORS)),
+    laneCar(stage, 'hatch', 3700, 2224, 'h', 2200, 1, rng.pick(PALETTE.CAR_COLORS)),
+    laneCar(stage, 'taxi', 4050, 2176, 'h', 2200, -1, '#e9c46a'),
   ]) keep.add(c);
 
-  copCar(stage, 4195, 1500, cx, cy);
+  copCar(stage, 3700, 2100, cx, cy);
   police.heat = 40;
   police.wanted = 1;
   police.busted = 0;
 
   populate(stage, hero, hero, 9);
 
-  rePin(hero, cx, cy, Math.PI / 2, 320);
+  rePin(hero, cx, cy, 0, 320);
   syncPlayerCar(player, hero);
   clearTraffic(stage, keep);
   return { screen: 'game' };

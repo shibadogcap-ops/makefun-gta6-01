@@ -391,6 +391,18 @@ function createTraffic(city, rng, count) {
     spawnParkedCar();
   }
 
+  // diner pad: three stealable wheels waiting by the spawn point
+  for (const [type, x, y, ang] of [
+    ['sedan', 2180, 1330, 0],
+    ['hatch', 2520, 1330, Math.PI],
+    ['pickup', 2180, 1570, 0],
+  ]) {
+    const car = createCar(type, x, y, ang, trafficColor(type, rng));
+    car.driver = null;
+    car.parked = true;
+    parked.push(car);
+  }
+
   /** Next intersection coordinate ahead along the car's road, or null. */
   function nextCrossing(car) {
     const list = car.roadAxis === 'v' ? roadsH : roadsV;
