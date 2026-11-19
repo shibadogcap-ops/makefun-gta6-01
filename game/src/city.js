@@ -27,10 +27,18 @@ function inView(x, y, w, h, cam, pad = 80) {
 }
 
 function shade(hex, f) {
-  const n = parseInt(hex.slice(1), 16);
-  const r = clamp(Math.round(((n >> 16) & 255) * f), 0, 255);
-  const g = clamp(Math.round(((n >> 8) & 255) * f), 0, 255);
-  const b = clamp(Math.round((n & 255) * f), 0, 255);
+  let r, g, b;
+  if (hex.startsWith('rgb')) {
+    [r, g, b] = hex.match(/\d+/g).map(Number);
+  } else {
+    const n = parseInt(hex.slice(1), 16);
+    r = (n >> 16) & 255;
+    g = (n >> 8) & 255;
+    b = n & 255;
+  }
+  r = clamp(Math.round(r * f), 0, 255);
+  g = clamp(Math.round(g * f), 0, 255);
+  b = clamp(Math.round(b * f), 0, 255);
   return `rgb(${r},${g},${b})`;
 }
 
@@ -123,6 +131,7 @@ export function createCity(rng) {
         const n = plan ? rng.int(1, 2) : rng.int(1, 4);
         const vertical = rng.chance(0.5);
         const gap = 10;
+        const blockStart = buildings.length;
         for (let i = 0; i < n; i++) {
           let bx0, by0, bx1, by1;
           if (n === 1) {
@@ -151,6 +160,32 @@ export function createCity(rng) {
           };
           if (avoid && overlap(b, avoid)) continue;
           buildings.push(b);
+        }
+
+        // a lone building covering most of the block splits in two
+        if (buildings.length - blockStart === 1) {
+          const b = buildings[buildings.length - 1];
+          if (b.w >= interior.w * 0.6 && b.h >= interior.h * 0.6) {
+            buildings.pop();
+            const alongX = b.w >= b.h;
+            const splitGap = 18;
+            const len = (alongX ? b.w : b.h) - splitGap;
+            const dims = alongX
+              ? [[b.x, len / 2], [b.x + len / 2 + splitGap, len / 2]]
+              : [[b.y, len / 2], [b.y + len / 2 + splitGap, len / 2]];
+            dims.forEach(([o, l], k) => {
+              const f = k === 0 ? 0.94 : 1.06;
+              buildings.push({
+                x: alongX ? o : b.x,
+                y: alongX ? b.y : o,
+                w: alongX ? l : b.w,
+                h: alongX ? b.h : l,
+                height: rng.range(6, Math.max(9, b.height * 0.7)),
+                color: shade(b.color, f),
+                roof: shade(b.roof, f),
+              });
+            });
+          }
         }
       }
 
@@ -347,20 +382,22 @@ export function createCity(rng) {
 
     // crosswalks at intersections near the camera
     ctx.fillStyle = PALETTE.crosswalk;
+    ctx.globalAlpha = 0.5;
     const m = 40;
     for (const rx of roadsX) {
       for (const ry of roadsY) {
         if (rx < vx - m || rx > vx + vw + m || ry < vy - m || ry > vy + vh + m) continue;
         // stripes across the vertical road (walking north-south)
         for (let i = -2; i <= 2; i++) {
-          ctx.fillRect(rx - HALF_ROAD + 8 + i * 16, ry - HALF_ROAD - 4, 9, ROAD_W + 8);
+          ctx.fillRect(rx - HALF_ROAD + 8 + i * 26, ry - HALF_ROAD - 4, 9, ROAD_W + 8);
         }
         // stripes across the horizontal road (walking east-west)
         for (let i = -2; i <= 2; i++) {
-          ctx.fillRect(rx - HALF_ROAD - 4, ry - HALF_ROAD + 8 + i * 16, ROAD_W + 8, 9);
+          ctx.fillRect(rx - HALF_ROAD - 4, ry - HALF_ROAD + 8 + i * 26, ROAD_W + 8, 9);
         }
       }
     }
+    ctx.globalAlpha = 1;
   }
 
   function drawPadLabel(ctx, r) {
@@ -397,15 +434,19 @@ export function createCity(rng) {
   function drawBuildings(ctx, cam) {
     for (const b of buildings) {
       const off = b.height * 0.32;
-      if (!inView(b.x - 20, b.y - off - 20, b.w + 40, b.h + off + 40, cam)) continue;
+      const wallH = clamp(b.height * 2.2, 10, 22);
+      if (!inView(b.x - 20, b.y - off - 20, b.w + 40, b.h + off + wallH + 40, cam)) continue;
+
+      const seed = (Math.floor(b.x) * 31 + Math.floor(b.y) * 17) >>> 0;
 
       // soft shadow
       ctx.fillStyle = 'rgba(30,10,40,0.25)';
       ctx.fillRect(b.x + 7, b.y + 9, b.w, b.h);
 
-      // extruded wall: darker footprint shifted up by height*0.32
-      ctx.fillStyle = shade(b.color, 0.55);
-      ctx.fillRect(b.x, b.y - off, b.w, b.h);
+      // pseudo-3D south wall hanging below the roof's bottom edge
+      const wallTop = b.y - off + b.h;
+      ctx.fillStyle = shade(b.roof, 0.55);
+      ctx.fillRect(b.x, wallTop, b.w, wallH);
 
       // roof
       ctx.fillStyle = b.roof;
@@ -416,8 +457,18 @@ export function createCity(rng) {
       ctx.fillStyle = 'rgba(255,255,255,0.28)';
       ctx.fillRect(b.x + 5, b.y - off + 5, b.w - 10, b.h - 10);
 
+      // windows on the wall band
+      if (b.w >= 60) {
+        const nWin = 3 + (seed % 4);
+        const wy = wallTop + (wallH - 6) / 2;
+        for (let i = 0; i < nWin; i++) {
+          const wx = b.x + 8 + (i * (b.w - 16)) / Math.max(1, nWin - 1) - 5;
+          ctx.fillStyle = (seed + i) % 3 === 0 ? '#26303a' : 'rgba(255,217,160,0.85)';
+          ctx.fillRect(wx, wy, 10, 6);
+        }
+      }
+
       // AC units, deterministic from the building's own numbers
-      const seed = (Math.floor(b.x) * 31 + Math.floor(b.y) * 17) >>> 0;
       for (let i = 0; i < 2; i++) {
         const ux = b.x + 8 + ((seed * (i + 3) * 37) % Math.max(10, b.w - 26));
         const uy = b.y - off + 8 + ((seed * (i + 5) * 53) % Math.max(10, b.h - 26));
@@ -439,16 +490,16 @@ export function createCity(rng) {
       ctx.moveTo(p.x, p.y);
       ctx.quadraticCurveTo(p.x + s, p.y - 10 * s, topX, topY);
       ctx.stroke();
-      ctx.fillStyle = PALETTE.palmLeaf;
+      ctx.strokeStyle = '#2e7d5b';
+      ctx.lineWidth = 3 * s;
+      ctx.lineCap = 'round';
       for (let k = 0; k < 6; k++) {
         const a = (k / 6) * Math.PI * 2 + s;
-        const ex = topX + Math.cos(a) * 12 * s;
-        const ey = topY + Math.sin(a) * 7 * s - 4 * s;
         ctx.beginPath();
-        ctx.moveTo(topX, topY);
-        ctx.quadraticCurveTo(topX + Math.cos(a) * 8 * s, topY + Math.sin(a) * 5 * s - 5 * s, ex, ey);
+        ctx.arc(topX, topY, 17 * s, a - 1.0, a + 0.45);
         ctx.stroke();
       }
+      ctx.lineCap = 'butt';
     }
   }
 
