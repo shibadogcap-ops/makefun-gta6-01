@@ -233,17 +233,21 @@ export function createHud() {
     ctx.save();
     rr(ctx, mx, my, mw, mh, 10);
     ctx.clip();
-    ctx.fillStyle = '#1d2b33';
+    ctx.fillStyle = '#33413a';
     ctx.fillRect(mx, my, mw, mh);
 
-    // water region (east side of the map)
-    const wx0 = px(4280);
+    // sand strip and water region (east side of the map)
+    const wsx = px(4280);
+    const wex = px(4400);
+    ctx.fillStyle = '#c9b083';
+    ctx.fillRect(wsx, my, wex - wsx, mh);
     ctx.fillStyle = '#27567d';
-    ctx.fillRect(wx0, my, mx + mw - wx0 + 1, mh);
+    ctx.fillRect(wex, my, mx + mw - wex + 1, mh);
 
     // roads
-    ctx.strokeStyle = '#93a7b1';
-    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#c3d2da';
+    ctx.lineWidth = 5.5;
+    ctx.globalAlpha = 0.85;
     ctx.beginPath();
     for (const rx of city.roadsX) {
       ctx.moveTo(px(rx), my);
@@ -254,6 +258,7 @@ export function createHud() {
       ctx.lineTo(mx + mw, py(ry));
     }
     ctx.stroke();
+    ctx.globalAlpha = 1;
 
     // traffic cars: grey dots
     ctx.save();

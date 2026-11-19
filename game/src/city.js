@@ -495,9 +495,21 @@ export function createCity(rng) {
       ctx.lineCap = 'round';
       for (let k = 0; k < 6; k++) {
         const a = (k / 6) * Math.PI * 2 + s;
+        const ex = topX + Math.cos(a) * 19 * s;
+        const ey = topY + Math.sin(a) * 13 * s + 6 * s;
+        const cx = topX + Math.cos(a) * 11 * s;
+        const cy = topY + Math.sin(a) * 8 * s - 5 * s;
         ctx.beginPath();
-        ctx.arc(topX, topY, 17 * s, a - 1.0, a + 0.45);
+        ctx.moveTo(topX, topY);
+        ctx.quadraticCurveTo(cx, cy, ex, ey);
         ctx.stroke();
+      }
+      ctx.fillStyle = '#6b4a2f';
+      for (let k = 0; k < 3; k++) {
+        const a = (k / 3) * Math.PI * 2 + 0.5;
+        ctx.beginPath();
+        ctx.arc(topX + Math.cos(a) * 3 * s, topY - 2 * s + Math.sin(a) * 2 * s, 2.2 * s, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.lineCap = 'butt';
     }
