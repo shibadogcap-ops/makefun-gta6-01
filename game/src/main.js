@@ -795,6 +795,7 @@ async function runShot(name) {
   }
   endKind = end || 'downed';
   state = screen === 'game' ? 'play' : 'title';
+  rebuildWorldCars();
   updateCamera(10); // snap the camera onto the staged subject
   renderFrame(state, 1.7);
   requestAnimationFrame(() => {
