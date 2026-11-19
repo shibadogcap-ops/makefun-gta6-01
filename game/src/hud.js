@@ -140,7 +140,7 @@ export function createHud() {
     const label = money(view.money);
     const w = Math.max(96, ctx.measureText(label).width + 28);
     rr(ctx, 20, 18, w, 42, 10);
-    ctx.fillStyle = COL.panel;
+    ctx.fillStyle = 'rgba(12,12,22,0.75)';
     ctx.fill();
     ctx.strokeStyle = COL.line;
     ctx.lineWidth = 1;
@@ -233,19 +233,17 @@ export function createHud() {
     ctx.save();
     rr(ctx, mx, my, mw, mh, 10);
     ctx.clip();
-    ctx.fillStyle = 'rgba(8,10,18,0.85)';
+    ctx.fillStyle = '#1d2b33';
     ctx.fillRect(mx, my, mw, mh);
 
-    // water strip on the right
-    const wx0 = px(city.waterX || 4360);
-    ctx.fillStyle = '#1c4066';
+    // water region (east side of the map)
+    const wx0 = px(4280);
+    ctx.fillStyle = '#27567d';
     ctx.fillRect(wx0, my, mx + mw - wx0 + 1, mh);
-    ctx.fillStyle = '#2f6d9e';
-    ctx.fillRect(wx0, my, 2, mh);
 
     // roads
-    ctx.strokeStyle = 'rgba(214,208,190,0.55)';
-    ctx.lineWidth = Math.max(1, 96 * s);
+    ctx.strokeStyle = '#93a7b1';
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     for (const rx of city.roadsX) {
       ctx.moveTo(px(rx), my);
@@ -257,19 +255,16 @@ export function createHud() {
     }
     ctx.stroke();
 
-    // landmarks
-    ctx.fillStyle = '#ffd27a';
-    for (const k in city.landmarks || {}) {
-      const l = city.landmarks[k];
-      if (!l) continue;
-      ctx.fillRect(px(l.x) - 1, py(l.y) - 1, 2.5, 2.5);
-    }
-
     // traffic cars: grey dots
+    ctx.save();
+    ctx.globalAlpha = 0.5;
     ctx.fillStyle = '#9aa0a8';
     for (const c of view.trafficCars || []) {
-      ctx.fillRect(px(c.x) - 1, py(c.y) - 1, 2, 2);
+      ctx.beginPath();
+      ctx.arc(px(c.x), py(c.y), 1.5, 0, Math.PI * 2);
+      ctx.fill();
     }
+    ctx.restore();
 
     // police cars: flashing red/blue
     const copCol = Math.floor(now * 4) % 2 === 0 ? '#e63946' : '#4a90d9';
@@ -363,6 +358,11 @@ export function createHud() {
     if (!obj) return;
     const cx = W / 2;
     const y = 224;
+    const sub = obj.sub || '';
+    const lastY = (sub !== '' || obj.timer != null) ? y + 46 : y + 24;
+    rr(ctx, cx - 250, y - 14, 500, lastY + 10 - (y - 14), 10);
+    ctx.fillStyle = 'rgba(8,10,18,0.55)';
+    ctx.fill();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.font = FONT.objTitle;
@@ -372,7 +372,6 @@ export function createHud() {
     ctx.fillStyle = COL.white;
     ctx.fillText(obj.text || '', cx, y + 24);
     ctx.font = FONT.objSub;
-    const sub = obj.sub || '';
     const subW = ctx.measureText(sub).width;
     const gap = obj.timer != null ? 14 : 0;
     ctx.fillStyle = COL.grey;
